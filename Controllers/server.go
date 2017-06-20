@@ -61,7 +61,7 @@ func main() {
 	http.HandleFunc("/", index)
 	http.HandleFunc("/about", about)
   	http.HandleFunc("/pc_langs", lang_call)
-  	http.HandleFunc("/pc_langs/json", lang_json_call)
+  	http.HandleFunc("/api/pc_langs/", lang_json_call)
 	http.HandleFunc("/contact", amigos)
 
   	http.HandleFunc("/pc_langs/delete/4", lang_delete)
@@ -121,7 +121,6 @@ func amigos(w http.ResponseWriter, req *http.Request) {
 }
 
 func lang_call(w http.ResponseWriter, req *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
 	rows, err := db2.Query(`SELECT language_name FROM languages;`) 
 	check(err)
 	defer rows.Close()
@@ -134,26 +133,12 @@ func lang_call(w http.ResponseWriter, req *http.Request) {
 	for rows.Next() {
 		err = rows.Scan(&name)
 		check(err)
-		// name := PClanguage{
-		// 	Lang: name,
-		// }
-
-		// json.Marshal(name)
-
+	
 		names = append(names, name)
 
 		
 }
-
-bs, err := json.Marshal(names)
-	if err != nil {
-		fmt.Println("error: ", err)
-	}
-
-	
-		w.Write(bs)
-
-	// tpl.ExecuteTemplate(w, "all_langs.gohtml", bs)//admin
+	tpl.ExecuteTemplate(w, "all_langs.gohtml", names)
 }
 
 func lang_json_call(w http.ResponseWriter, req *http.Request) {
@@ -193,7 +178,7 @@ bs, err := json.Marshal(names)
 }
 
 func lang_delete(w http.ResponseWriter, req *http.Request) {
-	stmt, err := db2.Prepare(`DELETE FROM languages WHERE languages_id=4;`)
+	stmt, err := db2.Prepare(`DELETE FROM languages WHERE languages_id=?;`)
 	check(err)
 	defer stmt.Close()
 
