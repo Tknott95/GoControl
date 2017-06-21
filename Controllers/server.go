@@ -64,7 +64,7 @@ func main() {
   	http.HandleFunc("/api/pc_langs/", lang_json_call)
 	http.HandleFunc("/contact", amigos)
 
-  	http.HandleFunc("/pc_langs/delete/4", lang_delete)
+  	http.HandleFunc("/pc_langs/delete", lang_delete)
 
 
 	http.Handle("/assets/", http.StripPrefix("/assets", http.FileServer(http.Dir("Public"))))
@@ -129,6 +129,13 @@ func lang_call(w http.ResponseWriter, req *http.Request) {
 	var name string
 	var names []string
 
+	if req.Method == "POST" {
+		req.ParseForm()
+
+		fmt.Println("Lang to delete:", req.Form["lang"])
+		
+	}
+
 	// query
 	for rows.Next() {
 		err = rows.Scan(&name)
@@ -178,15 +185,42 @@ bs, err := json.Marshal(names)
 }
 
 func lang_delete(w http.ResponseWriter, req *http.Request) {
-	stmt, err := db2.Prepare(`DELETE FROM languages WHERE languages_id=?;`)
+	// stmt, err := db2.Prepare(`DELETE FROM languages WHERE languages_id=?;`)
+	// check(err)
+	// defer stmt.Close()
+
+	// r, err := stmt.Exec()
+	// check(err)
+
+	// n, err := r.RowsAffected()
+	// check(err)
+
+	// fmt.Fprintln(w, "Deleted Lang ID 4", n)
+
+	if req.Method == "POST" {
+		req.ParseForm()
+		var lang2del = req.FormValue("lang");
+
+		fmt.Println("Lang to delete:", lang2del)
+		
+			stmt, err := db2.Prepare(`DELETE FROM languages WHERE language_name= ?;`)
 	check(err)
 	defer stmt.Close()
 
-	r, err := stmt.Exec()
-	check(err)
+	rows, err := stmt.Query(lang2del)
+if err != nil {
+	log.Fatal(err)
+}
+defer rows.Close()
+for rows.Next() {
+	// ...
+}
+if err = rows.Err(); err != nil {
+	log.Fatal(err)
+}
 
-	n, err := r.RowsAffected()
-	check(err)
+	fmt.Fprintln(w, "DELETED RECORD", rows)
 
-	fmt.Fprintln(w, "Deleted Lang ID 4", n)
+	}
+
 }
