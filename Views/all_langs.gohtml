@@ -7,7 +7,7 @@
         <title>TK - ADMIN</title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <link href="/assets/css/index.css" rel="stylesheet">
+        <link href="../assets/css/index.css" rel="stylesheet">
         <link href="https://maxcdn.bootstrapcdn.com/bootswatch/3.3.7/cyborg/bootstrap.min.css" rel="stylesheet" integrity="sha384-D9XILkoivXN+bcvB2kSOowkIvIcBbNdoDQvfBNsxYAIieZbx8/SI4NeUvrRGCpDi" crossorigin="anonymous">
     </head>
 
@@ -62,8 +62,13 @@
        <h3>{{.}}</h3>
 
      <form action="/pc_langs/delete" method="post">
-            Lang2Delete:<input type="text" value="lang" name="lang">
+            Lang2Delete:<input type="text" value="lang_del" name="lang_del">
             <input type="submit" value="lang_del">
+      </form>
+      <br> <hr> <br>
+       <form action="/pc_langs/add" method="post">
+            Lang2Delete:<input type="text" value="lang_add" name="lang_add">
+            <input type="submit" value="lang_add">
       </form>
     </div>
   </main>
