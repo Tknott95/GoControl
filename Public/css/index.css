@@ -1,5 +1,6 @@
  body {
 	     background-image: linear-gradient(grey, darkgrey, black);
+		 color: white;
 	         height: 100vh;
 	 }
 
@@ -16,3 +17,7 @@
 			         font-size: 2rem;
 				     color: grey;
 			     }
+
+				 strong {
+					 color: black;
+				 }
