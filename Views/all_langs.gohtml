@@ -59,7 +59,17 @@
       <main class="mdl-layout__content">
     <div class="page-content" style="height: 800px; padding-left: 20px; background-image: url('http://www.calzadocass.com/wp-content/uploads/2016/10/resize-img.jpg');">
         <h1>Languages</h1>
-       <h3>{{.}}</h3>
+       {{range $index, $element := .}}
+       <li>
+         <a>
+           {{$index}} - {{$element}}
+         </a>
+          <form action="/pc_langs/delete/{{$element}}" method="post">
+            <input type="submit" value="{{$element}}">
+      </form>
+          <button method="post" src="/pc_langs/delete" value="{{$element}}" formaction="/pc_langs/delete"> DEL </button>
+       </li>
+       {{end}}
 
      <form action="/pc_langs/delete" method="post">
             <strong>Language To Delete:</strong><input type="text" placeholder="Java" value="Java" name="lang_del">
