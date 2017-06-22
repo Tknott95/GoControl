@@ -7,6 +7,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"os"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/julienschmidt/httprouter"
@@ -63,12 +64,16 @@ func main() {
 
 	mux := httprouter.New()
 	mux.GET("/", index)
+	mux.GET("/admin/signin", adminSignin)
 	mux.GET("/about", about)
 	mux.GET("/pc_langs", lang_call)
 	mux.POST("/pc_langs/delete/:lang", lang_delete_call)
 	mux.POST("/pc_langs/add", lang_add_call)
 	mux.GET("/api/pc_langs/", lang_json_call)
 	mux.GET("/contact", amigos)
+	mux.ServeFiles("/assets/*filepath", http.Dir("/assets"))
+
+	mux.POST("/admin/login", admin_login)
 
 	// mux.Handler("GET", "/assets/", http.StripPrefix("/assets", justFilesFilesystem{http.Dir("Public")}))
 	http.Handle("/favicon.ico", http.NotFoundHandler())
@@ -88,8 +93,10 @@ func about(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {
 	tpl.ExecuteTemplate(w, "about.gohtml", nil)
 }
 
-func blogControl(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+func adminSignin(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {
 	fmt.Println("Blog Control Page Hit")
+
+	tpl.ExecuteTemplate(w, "admin_signin.gohtml", nil)
 }
 
 func check(err error) {
@@ -122,6 +129,8 @@ func amigos(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {
 
 	fmt.Println(string(json))
 }
+
+// LANGUAGES //
 
 func lang_call(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {
 	rows, err := db2.Query(`SELECT lang_name FROM pc_langs;`)
@@ -179,57 +188,108 @@ func lang_json_call(w http.ResponseWriter, req *http.Request, _ httprouter.Param
 }
 
 func lang_delete_call(w http.ResponseWriter, req *http.Request, ps httprouter.Params) {
-	if req.Method == "POST" {
-		req.ParseForm()
-		var lang_to_del string
-		lang_to_del = ps.ByName("lang") // req.FormValue("lang_del") ALternate way via. form
+	if os.Getenv("admin") == "true" {
+		if req.Method == "POST" {
+			req.ParseForm()
+			var lang_to_del string
+			lang_to_del = ps.ByName("lang") // req.FormValue("lang_del") ALternate way via. form
 
-		if lang_to_del == "C" { // BUG FIX TO ALLOW C# DELETION (C WONT BE ADDED REGARDLESS)
-			lang_to_del = "C#"
+			if lang_to_del == "C" { // BUG FIX TO ALLOW C# DELETION (C WONT BE ADDED REGARDLESS)
+				lang_to_del = "C#"
+			}
+
+			fmt.Println("Lang to delete:", lang_to_del)
+
+			stmt, err := db2.Prepare(`DELETE FROM pc_langs WHERE lang_name= ?;`)
+			check(err)
+			defer stmt.Close()
+
+			rows, err := stmt.Query(lang_to_del)
+			if err != nil {
+				log.Fatal(err)
+			}
+			defer rows.Close()
+			for rows.Next() {
+				// ...
+			}
+			if err = rows.Err(); err != nil {
+				log.Fatal(err)
+			}
+
+			fmt.Println(w, "DELETED RECORD", rows)
+
 		}
-
-		fmt.Println("Lang to delete:", lang_to_del)
-
-		stmt, err := db2.Prepare(`DELETE FROM pc_langs WHERE lang_name= ?;`)
-		check(err)
-		defer stmt.Close()
-
-		rows, err := stmt.Query(lang_to_del)
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer rows.Close()
-		for rows.Next() {
-			// ...
-		}
-		if err = rows.Err(); err != nil {
-			log.Fatal(err)
-		}
-
-		fmt.Println(w, "DELETED RECORD", rows)
-
-		http.Redirect(w, req, "/pc_langs", 301)
+	} else {
+		fmt.Println(w, "MUST BE ADMIN TO DELETE LANGUAGES")
 	}
+
+	http.Redirect(w, req, "/pc_langs", 301)
 
 }
 
 func lang_add_call(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+	if os.Getenv("admin") == "true" {
+		if req.Method == "POST" {
+			req.ParseForm()
+
+			var lang_to_add string
+			lang_to_add = req.FormValue("lang_add")
+
+			fmt.Println("Lang to add:", lang_to_add)
+
+			stmt, err := db2.Prepare(`INSERT INTO pc_langs(lang_id, lang_name) VALUES(?, ?);`) // `INSERT INTO customer VALUES ("James");`
+			check(err)
+
+			if lang_to_add != "" {
+				result, err := stmt.Exec(0, lang_to_add)
+				check(err)
+
+				fmt.Println(w, "ADD RECORD", result)
+			} else {
+				fmt.Println(w, "Unable to add NULL FIELDS!", lang_to_add)
+			}
+
+		}
+	} else {
+		fmt.Println(w, "MUST HAVE ADMIN ACCESS TO ADD LANGS!", nil)
+	}
+
+	http.Redirect(w, req, "/pc_langs", 301)
+
+}
+
+func admin_login(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {
 	if req.Method == "POST" {
-		req.ParseForm()
+		var admin_name string
+		var admin_password string
 
-		var lang_to_add string
-		lang_to_add = req.FormValue("lang_add")
+		admin_name = req.FormValue("admin-email")
+		admin_password = req.FormValue("admin-password")
 
-		fmt.Println("Lang to add:", lang_to_add)
-
-		stmt, err := db2.Prepare(`INSERT INTO pc_langs(lang_id, lang_name) VALUES(?, ?);`) // `INSERT INTO customer VALUES ("James");`
+		rows, err := db2.Query(`SELECT admin_email FROM admin_users;`)
+		fmt.Println(w, "Established admin_users db connection", nil)
 		check(err)
+		defer rows.Close()
 
-		result, err := stmt.Exec(0, lang_to_add)
-		check(err)
+		// data to be used in query
+		var name string
+		var names []string
 
-		fmt.Println(w, "ADD RECORD", result)
+		// query
+		for rows.Next() {
+			err = rows.Scan(&name)
+			check(err)
 
-		http.Redirect(w, req, "/pc_langs", 301)
+			names = append(names, name)
+
+		}
+
+		if admin_name == names[0] && admin_password == "admin" {
+			os.Setenv("admin", "true")
+			tpl.ExecuteTemplate(w, "admin_users.gohtml", names)
+		} else {
+			fmt.Fprintln(w, "YOU ARE NOT AN AUTHORIZED ADMIN.. GO BACK QUICKLY CONTACT TREVOR KNOTT... Geolocating in 20 seconds...", nil)
+		}
+
 	}
 }
