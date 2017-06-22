@@ -8,7 +8,6 @@ import (
 	"log"
 	"net/http"
 
-
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/julienschmidt/httprouter"
 	"golang.org/x/crypto/bcrypt"
@@ -31,6 +30,8 @@ var db2 *sql.DB
 var db *sql.DB
 var err error
 
+var mainDomain string = "localhost" + portNumber
+
 var dbAdminUsers = map[string]AdminUser{}
 var dbSessions = map[string]string{}
 
@@ -44,7 +45,7 @@ func init() {
 }
 
 func main() {
-	fmt.Println("Server Initialized on port :8080")
+	fmt.Println("Server Initialized on port:", portNumber)
 
 	db2, err = sql.Open("mysql", "tknott95:Welcome1!@tcp(godbinstance.cfchdss74ohb.us-west-1.rds.amazonaws.com:3306)/myGOdb?charset=utf8")
 	check(err)
@@ -181,7 +182,7 @@ func lang_delete_call(w http.ResponseWriter, req *http.Request, ps httprouter.Pa
 	if req.Method == "POST" {
 		req.ParseForm()
 		var lang_to_del string
-		lang_to_del = ps.ByName("lang"); // req.FormValue("lang_del") ALternate way via. form
+		lang_to_del = ps.ByName("lang") // req.FormValue("lang_del") ALternate way via. form
 
 		if lang_to_del == "C" { // BUG FIX TO ALLOW C# DELETION (C WONT BE ADDED REGARDLESS)
 			lang_to_del = "C#"
@@ -205,8 +206,9 @@ func lang_delete_call(w http.ResponseWriter, req *http.Request, ps httprouter.Pa
 			log.Fatal(err)
 		}
 
-		fmt.Fprintln(w, "DELETED RECORD", rows)
+		fmt.Println(w, "DELETED RECORD", rows)
 
+		http.Redirect(w, req, "/pc_langs", 301)
 	}
 
 }
@@ -222,11 +224,12 @@ func lang_add_call(w http.ResponseWriter, req *http.Request, _ httprouter.Params
 
 		stmt, err := db2.Prepare(`INSERT INTO pc_langs(lang_id, lang_name) VALUES(?, ?);`) // `INSERT INTO customer VALUES ("James");`
 		check(err)
-		
+
 		result, err := stmt.Exec(0, lang_to_add)
 		check(err)
 
-		fmt.Fprintln(w, "ADD RECORD", result)
+		fmt.Println(w, "ADD RECORD", result)
 
+		http.Redirect(w, req, "/pc_langs", 301)
 	}
 }

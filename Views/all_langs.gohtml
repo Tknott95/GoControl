@@ -65,19 +65,14 @@
            {{$index}} - {{$element}}
          </a>
           <form action="/pc_langs/delete/{{$element}}" method="post">
-            <input type="submit" value="{{$element}}">
+            <button type="submit" value="{{$element}}">Delete {{$element}} </button>
       </form>
-          <button method="post" src="/pc_langs/delete" value="{{$element}}" formaction="/pc_langs/delete"> DEL </button>
        </li>
        {{end}}
 
-     <form action="/pc_langs/delete" method="post">
-            <strong>Language To Delete:</strong><input type="text" placeholder="Java" value="Java" name="lang_del">
-            <input type="submit" value="lang_del">
-      </form>
       <br> <hr> <br>
        <form action="/pc_langs/add" method="post">
-            <strong>Language To Add:</strong><input type="text" placeholder="Golang" value="Golang" name="lang_add">
+            <stronger>Language To Add:</stronger><input type="text" placeholder="Golang" value="Golang" name="lang_add">
             <input type="submit" value="lang_add">
       </form>
     </div>
