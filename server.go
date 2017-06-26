@@ -271,7 +271,6 @@ func admin_login(w http.ResponseWriter, req *http.Request, _ httprouter.Params) 
 		check(err)
 		defer rows.Close()
 
-		// data to be used in query
 		var name string
 		var names []string
 
